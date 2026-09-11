@@ -214,11 +214,11 @@
       const newText = prompt('請修改項目內容：', item.text);
       if (newText === null || newText.trim() === '') return;
 
-      const newDate = prompt('請輸入日期 (格式: YYYY-MM-DD，若無請留空)：', item.date || '');
+      const newDate = prompt('請Type日期 (格式: YYYY-MM-DD，若無請留空)：', item.date || '');
       let newType = item.dateType;
 
       if (newDate && newDate.trim() !== '') {
-        const choice = prompt('請設定日期屬性：\n輸入 1 代表 [參加日 / Event Date]\n輸入 2 代表 [截止日 / Deadline]', item.dateType === 'event' ? '1' : '2');
+        const choice = prompt('請設定日期屬性：\nType 1 代表 [參加日 / Event Date]\nType 2 代表 [截止日 / Deadline]', item.dateType === 'event' ? '1' : '2');
         newType = (choice === '1') ? 'event' : 'deadline';
       } else {
         newType = 'none';
@@ -260,14 +260,14 @@
             </div>
           </div>
           <div style="margin-bottom: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="sub-input-${gIndex}" placeholder="輸入" style="width: 200px;">
+            <input type="text" id="sub-input-${gIndex}" placeholder="Type" style="width: 200px;">
             <input type="date" id="sub-date-${gIndex}">
             <select id="sub-type-${gIndex}">
               <option value="none">No Date</option>
               <option value="event">As Date</option>
               <option value="deadline">As Deadline</option>
             </select>
-            <button onclick="addSub(${gIndex})">新增</button>
+            <button onclick="addSub(${gIndex})">Add</button>
           </div>
         `;
 
@@ -375,10 +375,10 @@
   <h2>To-Do List</h2>
   <div class="status-bar" id="sync-status">🔄 正在連線雲端資料庫...</div>
 
-  <!-- 新增主項目 -->
+  <!-- Add主項目 -->
   <div style="margin-bottom: 20px;">
-    <input type="text" id="new-group-input" placeholder="輸入" style="width: 250px;">
-    <button onclick="addGroup()">新增</button>
+    <input type="text" id="new-group-input" placeholder="Type" style="width: 250px;">
+    <button onclick="addGroup()">Add</button>
   </div>
 
   <!-- 清單容器 -->
