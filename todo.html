@@ -178,7 +178,7 @@
     };
 
     window.deleteGroup = function(gIndex) {
-      if (confirm('確定要刪除整個項目嗎？')) {
+      if (confirm('確定要Delete整個項目嗎？')) {
         todoData.splice(gIndex, 1);
         saveData();
       }
@@ -255,17 +255,17 @@
               <span>${escapeHtml(group.title)}</span>
             </div>
             <div class="btn-group">
-              <button onclick="editGroup(${gIndex})">編輯</button>
-              <button onclick="deleteGroup(${gIndex})">刪除</button>
+              <button onclick="editGroup(${gIndex})">Edit</button>
+              <button onclick="deleteGroup(${gIndex})">Delete</button>
             </div>
           </div>
           <div style="margin-bottom: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="sub-input-${gIndex}" placeholder="輸入" style="width: 200px;">
             <input type="date" id="sub-date-${gIndex}">
             <select id="sub-type-${gIndex}">
-              <option value="none">No date</option>
-              <option value="event">as Date)</option>
-              <option value="deadline">as Deadline</option>
+              <option value="none">No Date</option>
+              <option value="event">As Date</option>
+              <option value="deadline">As Deadline</option>
             </select>
             <button onclick="addSub(${gIndex})">新增</button>
           </div>
@@ -296,8 +296,8 @@
               ${badgeHtml}
             </div>
             <div class="btn-group">
-              <button onclick="editSub(${gIndex}, ${sIndex})">編輯</button>
-              <button onclick="deleteSub(${gIndex}, ${sIndex})">刪除</button>
+              <button onclick="editSub(${gIndex}, ${sIndex})">Edit</button>
+              <button onclick="deleteSub(${gIndex}, ${sIndex})">Delete</button>
             </div>
           `;
           subList.appendChild(subEl);
