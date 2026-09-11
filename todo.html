@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>To-Do List (雲端同步版)</title>
+  <title>To-Do List </title>
   <style>
     body {
       font-family: sans-serif;
@@ -260,12 +260,12 @@
             </div>
           </div>
           <div style="margin-bottom: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="sub-input-${gIndex}" placeholder="輸入小項目..." style="width: 200px;">
+            <input type="text" id="sub-input-${gIndex}" placeholder="輸入" style="width: 200px;">
             <input type="date" id="sub-date-${gIndex}">
             <select id="sub-type-${gIndex}">
-              <option value="none">無日期屬性</option>
-              <option value="event">as Date (參加日)</option>
-              <option value="deadline">as Deadline (截止日)</option>
+              <option value="none">No date</option>
+              <option value="event">as Date)</option>
+              <option value="deadline">as Deadline</option>
             </select>
             <button onclick="addSub(${gIndex})">新增</button>
           </div>
@@ -284,9 +284,9 @@
           let badgeHtml = '';
           if (subItem.date) {
             if (subItem.dateType === 'event') {
-              badgeHtml = `<span class="badge badge-event">🗓️ 參加日: ${escapeHtml(subItem.date)}</span>`;
+              badgeHtml = `<span class="badge badge-event">🗓️ date: ${escapeHtml(subItem.date)}</span>`;
             } else {
-              badgeHtml = `<span class="badge badge-deadline">⏳ 截止日: ${escapeHtml(subItem.date)}</span>`;
+              badgeHtml = `<span class="badge badge-deadline">⏳ deadline: ${escapeHtml(subItem.date)}</span>`;
             }
           }
 
@@ -377,7 +377,7 @@
 
   <!-- 新增主項目 -->
   <div style="margin-bottom: 20px;">
-    <input type="text" id="new-group-input" placeholder="輸入項目名稱..." style="width: 250px;">
+    <input type="text" id="new-group-input" placeholder="輸入" style="width: 250px;">
     <button onclick="addGroup()">新增</button>
   </div>
 
