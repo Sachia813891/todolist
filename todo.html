@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do List (雲端同步版)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 30px;
+      line-height: 1.5;
+    }
+    input[type="text"], input[type="date"], select {
+      padding: 4px;
+      font-size: 14px;
+    }
+    button {
+      padding: 3px 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    
+    .status-bar {
+      margin-bottom: 15px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    /* 大項目外框 */
+    .group-item {
+      border: 1px solid #666;
+      background: #fafafa;
+      margin-bottom: 15px;
+      padding: 10px;
+      cursor: grab;
+      max-width: 780px;
+    }
+    .group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .group-title-area {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 4px;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+
+    /* 子項目清單 */
+    .sub-list {
+      list-style-type: none;
+      padding-left: 20px;
+      margin: 0;
+      min-height: 20px;
+    }
+    .sub-item {
+      border: 1px dashed #999;
+      background: #fff;
+      margin: 4px 0;
+      padding: 6px 8px;
+      cursor: grab;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .sub-content {
+      word-break: break-word;
+      flex-grow: 1;
+    }
+
+    /* 日期標籤樣式 */
+    .badge {
+      font-size: 12px;
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 6px;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+    .badge-event {
+      background: #e8f0fe;
+      border: 1px solid #aecbfa;
+      color: #1a73e8;
+    }
+    .badge-deadline {
+      background: #fce8e6;
+      border: 1px solid #fad2cf;
+      color: #c5221f;
+    }
+
+    /* 拖曳中樣式 */
+    .dragging {
+      opacity: 0.3;
+      border: 2px dashed #000 !important;
+    }
+  </style>
+
+  <!-- 引入 Firebase SDK (CDN 模組) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ====== 請將此段替換成你在 Firebase 控制台拿到的配置 ======
+  const firebaseConfig = {
+    apiKey: "AIzaSyDfBeBEnTrxDMJVDkyFZvI9zNTsOhw33rw",
+    authDomain: "to-do-list-8126d.firebaseapp.com",
+    projectId: "to-do-list-8126d",
+    storageBucket: "to-do-list-8126d.firebasestorage.app",
+    messagingSenderId: "328062215967",
+    appId: "1:328062215967:web:c796210d0270fb5628b22a"
+  };
+    // ==========================================================
+
+    // 初始化 Firebase 與 Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    // 將所有資料存放在 todos 集合裡的 main_list 文件中
+    const todoDocRef = doc(db, "todos", "main_list");
+
+    let todoData = [];
+
+    // 即時監聽資料庫變化 (兩台電腦會在此事件中秒級同步)
+    onSnapshot(todoDocRef, (docSnap) => {
+      document.getElementById('sync-status').innerText = '🟢 雲端已連線，即時同步中';
+      if (docSnap.exists()) {
+        todoData = docSnap.data().items || [];
+      } else {
+        todoData = [];
+      }
+      render();
+    }, (error) => {
+      console.error(error);
+      document.getElementById('sync-status').innerText = '🔴 連線失敗，請檢查金鑰或網路';
+    });
+
+    // 儲存至雲端
+    async function saveData() {
+      document.getElementById('sync-status').innerText = '⏳ 雲端同步中...';
+      try {
+        await setDoc(todoDocRef, { items: todoData });
+      } catch (e) {
+        console.error("寫入失敗: ", e);
+        alert("資料儲存失敗，請檢查連線！");
+      }
+    }
+
+    // 將內部函式掛載至 window，讓 HTML 的 onclick 可以呼叫
+    window.addGroup = function() {
+      const input = document.getElementById('new-group-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      todoData.push({
+        id: Date.now(),
+        title: val,
+        subs: []
+      });
+      input.value = '';
+      saveData();
+    };
+
+    window.editGroup = function(gIndex) {
+      const currentTitle = todoData[gIndex].title;
+      const newTitle = prompt('請修改名稱：', currentTitle);
+      if (newTitle !== null && newTitle.trim() !== '') {
+        todoData[gIndex].title = newTitle.trim();
+        saveData();
+      }
+    };
+
+    window.deleteGroup = function(gIndex) {
+      if (confirm('確定要刪除整個項目嗎？')) {
+        todoData.splice(gIndex, 1);
+        saveData();
+      }
+    };
+
+    window.addSub = function(gIndex) {
+      const textInput = document.getElementById(`sub-input-${gIndex}`);
+      const dateInput = document.getElementById(`sub-date-${gIndex}`);
+      const typeSelect = document.getElementById(`sub-type-${gIndex}`);
+
+      const textVal = textInput.value.trim();
+      const dateVal = dateInput.value;
+      const typeVal = typeSelect.value;
+
+      if (!textVal) return;
+
+      const finalType = dateVal ? (typeVal === 'none' ? 'deadline' : typeVal) : 'none';
+
+      todoData[gIndex].subs.push({
+        text: textVal,
+        date: dateVal || '',
+        dateType: finalType
+      });
+
+      textInput.value = '';
+      dateInput.value = '';
+      typeSelect.value = 'none';
+      saveData();
+    };
+
+    window.editSub = function(gIndex, sIndex) {
+      const item = todoData[gIndex].subs[sIndex];
+      const newText = prompt('請修改項目內容：', item.text);
+      if (newText === null || newText.trim() === '') return;
+
+      const newDate = prompt('請輸入日期 (格式: YYYY-MM-DD，若無請留空)：', item.date || '');
+      let newType = item.dateType;
+
+      if (newDate && newDate.trim() !== '') {
+        const choice = prompt('請設定日期屬性：\n輸入 1 代表 [參加日 / Event Date]\n輸入 2 代表 [截止日 / Deadline]', item.dateType === 'event' ? '1' : '2');
+        newType = (choice === '1') ? 'event' : 'deadline';
+      } else {
+        newType = 'none';
+      }
+
+      todoData[gIndex].subs[sIndex] = {
+        text: newText.trim(),
+        date: newDate !== null ? newDate.trim() : '',
+        dateType: newType
+      };
+      saveData();
+    };
+
+    window.deleteSub = function(gIndex, sIndex) {
+      todoData[gIndex].subs.splice(sIndex, 1);
+      saveData();
+    };
+
+    function render() {
+      const container = document.getElementById('todo-container');
+      container.innerHTML = '';
+
+      todoData.forEach((group, gIndex) => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'group-item';
+        groupEl.draggable = true;
+
+        bindDragEvents(groupEl, 'group', gIndex);
+
+        groupEl.innerHTML = `
+          <div class="group-header">
+            <div class="group-title-area">
+              <span>☰</span>
+              <span>${escapeHtml(group.title)}</span>
+            </div>
+            <div class="btn-group">
+              <button onclick="editGroup(${gIndex})">編輯</button>
+              <button onclick="deleteGroup(${gIndex})">刪除</button>
+            </div>
+          </div>
+          <div style="margin-bottom: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="sub-input-${gIndex}" placeholder="輸入小項目..." style="width: 200px;">
+            <input type="date" id="sub-date-${gIndex}">
+            <select id="sub-type-${gIndex}">
+              <option value="none">無日期屬性</option>
+              <option value="event">as Date (參加日)</option>
+              <option value="deadline">as Deadline (截止日)</option>
+            </select>
+            <button onclick="addSub(${gIndex})">新增</button>
+          </div>
+        `;
+
+        const subList = document.createElement('ul');
+        subList.className = 'sub-list';
+
+        group.subs.forEach((subItem, sIndex) => {
+          const subEl = document.createElement('li');
+          subEl.className = 'sub-item';
+          subEl.draggable = true;
+
+          bindDragEvents(subEl, 'sub', gIndex, sIndex);
+
+          let badgeHtml = '';
+          if (subItem.date) {
+            if (subItem.dateType === 'event') {
+              badgeHtml = `<span class="badge badge-event">🗓️ 參加日: ${escapeHtml(subItem.date)}</span>`;
+            } else {
+              badgeHtml = `<span class="badge badge-deadline">⏳ 截止日: ${escapeHtml(subItem.date)}</span>`;
+            }
+          }
+
+          subEl.innerHTML = `
+            <div class="sub-content">
+              <span>• ${escapeHtml(subItem.text)}</span>
+              ${badgeHtml}
+            </div>
+            <div class="btn-group">
+              <button onclick="editSub(${gIndex}, ${sIndex})">編輯</button>
+              <button onclick="deleteSub(${gIndex}, ${sIndex})">刪除</button>
+            </div>
+          `;
+          subList.appendChild(subEl);
+        });
+
+        groupEl.appendChild(subList);
+        container.appendChild(groupEl);
+      });
+    }
+
+    let draggedElement = null;
+
+    function bindDragEvents(el, type, gIndex, sIndex = null) {
+      el.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        draggedElement = { type, gIndex, sIndex };
+        el.classList.add('dragging');
+      });
+
+      el.addEventListener('dragend', (e) => {
+        e.stopPropagation();
+        el.classList.remove('dragging');
+        draggedElement = null;
+      });
+
+      el.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!draggedElement) return;
+
+        if (draggedElement.type === 'group' && type === 'group') {
+          const fromIndex = draggedElement.gIndex;
+          const toIndex = gIndex;
+          if (fromIndex === toIndex) return;
+
+          const movedItem = todoData.splice(fromIndex, 1)[0];
+          todoData.splice(toIndex, 0, movedItem);
+          saveData();
+        }
+
+        if (draggedElement.type === 'sub' && type === 'sub') {
+          const fromGIndex = draggedElement.gIndex;
+          const fromSIndex = draggedElement.sIndex;
+          const toGIndex = gIndex;
+          const toSIndex = sIndex;
+
+          const movedSub = todoData[fromGIndex].subs.splice(fromSIndex, 1)[0];
+          todoData[toGIndex].subs.splice(toSIndex, 0, movedSub);
+          saveData();
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[m];
+      });
+    }
+  </script>
+</head>
+<body>
+
+  <h2>To-Do List</h2>
+  <div class="status-bar" id="sync-status">🔄 正在連線雲端資料庫...</div>
+
+  <!-- 新增主項目 -->
+  <div style="margin-bottom: 20px;">
+    <input type="text" id="new-group-input" placeholder="輸入項目名稱..." style="width: 250px;">
+    <button onclick="addGroup()">新增</button>
+  </div>
+
+  <!-- 清單容器 -->
+  <div id="todo-container"></div>
+
+</body>
+</html>
