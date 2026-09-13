@@ -2,19 +2,21 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>To-Do List & Calendar</title>
+  <title>To-Do List with Calendar</title>
   <style>
     body {
-      font-family: sans-serif;
-      margin: 20px;
-      line-height: 1.5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 25px;
+      line-height: 1.4;
+      background-color: #fff;
+      color: #333;
     }
     input[type="text"], input[type="date"], select {
-      padding: 4px;
-      font-size: 14px;
+      padding: 4px 6px;
+      font-size: 13px;
     }
     button {
-      padding: 3px 6px;
+      padding: 3px 8px;
       cursor: pointer;
       font-size: 13px;
     }
@@ -28,34 +30,29 @@
     /* 左右雙欄佈局 */
     .main-layout {
       display: flex;
-      gap: 25px;
+      gap: 30px;
       align-items: flex-start;
     }
-
-    /* 左側 To-Do 區域 */
-    .todo-section {
+    .left-panel {
       flex: 1;
-      min-width: 480px;
+      min-width: 460px;
       max-width: 650px;
     }
-
-    /* 右側月曆區域 */
-    .calendar-section {
-      flex: 1.2;
-      min-width: 520px;
-      border: 1px solid #ccc;
-      background: #fff;
-      padding: 15px;
-      border-radius: 4px;
+    .right-panel {
+      flex: 1.3;
+      min-width: 580px;
+      position: sticky;
+      top: 20px;
     }
 
     /* 大項目外框 */
     .group-item {
-      border: 1px solid #666;
+      border: 1px solid #ccc;
       background: #fafafa;
       margin-bottom: 15px;
       padding: 10px;
       cursor: grab;
+      border-radius: 4px;
     }
     .group-header {
       display: flex;
@@ -80,12 +77,12 @@
     /* 子項目清單 */
     .sub-list {
       list-style-type: none;
-      padding-left: 20px;
+      padding-left: 15px;
       margin: 0;
-      min-height: 20px;
+      min-height: 15px;
     }
     .sub-item {
-      border: 1px dashed #999;
+      border: 1px dashed #bbb;
       background: #fff;
       margin: 4px 0;
       padding: 6px 8px;
@@ -93,7 +90,8 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 10px;
+      gap: 8px;
+      border-radius: 3px;
     }
     .sub-content {
       word-break: break-word;
@@ -102,10 +100,10 @@
 
     /* 日期標籤樣式 */
     .badge {
-      font-size: 12px;
+      font-size: 11px;
       border-radius: 3px;
       padding: 1px 5px;
-      margin-left: 6px;
+      margin-left: 5px;
       white-space: nowrap;
       font-weight: 500;
     }
@@ -120,78 +118,109 @@
       color: #c5221f;
     }
 
-    /* 拖曳中樣式 */
+    /* 拖曳樣式 */
     .dragging {
       opacity: 0.3;
       border: 2px dashed #000 !important;
     }
 
-    /* ====== 月曆專用樣式 ====== */
-    .calendar-header {
+    /* =================== 工整化月曆樣式 =================== */
+    .calendar-container {
+      border: 1px solid #ccc;
+      background: #fafafa;
+      padding: 12px;
+      border-radius: 4px;
+    }
+    .calendar-nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
     }
-    .calendar-header h3 {
+    .calendar-nav h3 {
       margin: 0;
-      font-size: 18px;
+      font-size: 17px;
     }
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      border-top: 1px solid #ddd;
-      border-left: 1px solid #ddd;
+      gap: 2px;
+      background: #ddd;
+      border: 1px solid #ddd;
     }
-    .calendar-day-head {
+    .cal-header-cell {
       background: #f0f0f0;
-      font-weight: bold;
       text-align: center;
+      font-weight: bold;
       padding: 6px 0;
-      font-size: 13px;
-      border-right: 1px solid #ddd;
-      border-bottom: 1px solid #ddd;
+      font-size: 12px;
+      color: #555;
     }
-    .calendar-cell {
-      min-height: 85px;
-      border-right: 1px solid #ddd;
-      border-bottom: 1px solid #ddd;
-      padding: 4px;
+    .cal-cell {
       background: #fff;
-      vertical-align: top;
+      min-height: 105px;
+      max-height: 105px;
+      padding: 4px;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
+      gap: 3px;
+      overflow-y: auto;
+      scrollbar-width: thin; /* 縮小捲軸 */
     }
-    .calendar-cell.other-month {
-      background: #fbfbfb;
-      opacity: 0.45;
+    .cal-cell.empty {
+      background: #f8f8f8;
     }
-    .calendar-cell.today {
-      background: #fffde7; /* 今日淡黃色提示 */
-    }
-    .day-number {
-      font-size: 12px;
-      font-weight: bold;
-      color: #444;
-      margin-bottom: 3px;
-    }
-    .cal-event {
+    .cal-date-num {
       font-size: 11px;
-      padding: 2px 4px;
-      margin-bottom: 2px;
-      border-radius: 2px;
-      line-height: 1.2;
-      word-break: break-all;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 1px;
+      line-height: 1;
     }
-    .cal-event-date {
+    .cal-cell.today {
+      background: #fffde7;
+    }
+    .cal-cell.today .cal-date-num {
+      color: #d93025;
+    }
+
+    /* 月曆內工整卡片 */
+    .cal-task-pill {
+      font-size: 11px;
+      padding: 3px 5px;
+      border-radius: 3px;
+      line-height: 1.25;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    .cal-pill-tag {
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+      opacity: 0.85;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 1px;
+    }
+    .cal-pill-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* 單字超長時以 ... 優雅結尾，不粗暴切斷 */
+    }
+
+    .cal-task-event {
       background: #e8f0fe;
       border-left: 3px solid #1a73e8;
-      color: #1a73e8;
+      color: #174ea6;
     }
-    .cal-event-deadline {
+    .cal-task-deadline {
       background: #fce8e6;
-      border-left: 3px solid #c5221f;
-      color: #c5221f;
+      border-left: 3px solid #d93025;
+      color: #a50e0e;
     }
   </style>
 
@@ -215,11 +244,11 @@
 
     let todoData = [];
 
-    // 當前月曆顯示的年、月（0 = 1月，依此類推）
+    // 當前行事曆瀏覽的 年 與 月
     let currentCalYear = new Date().getFullYear();
     let currentCalMonth = new Date().getMonth();
 
-    // 即時監聽資料庫變化
+    // 即時監聽資料庫
     onSnapshot(todoDocRef, (docSnap) => {
       document.getElementById('sync-status').innerText = '🟢 雲端已連線，即時同步中';
       if (docSnap.exists()) {
@@ -228,13 +257,11 @@
         todoData = [];
       }
       render();
-      renderCalendar();
     }, (error) => {
       console.error(error);
       document.getElementById('sync-status').innerText = '🔴 連線失敗，請檢查金鑰或網路';
     });
 
-    // 儲存至雲端
     async function saveData() {
       document.getElementById('sync-status').innerText = '⏳ 雲端同步中...';
       try {
@@ -328,33 +355,36 @@
       saveData();
     };
 
-    // 月曆翻頁控制
-    window.prevMonth = function() {
-      currentCalMonth--;
+    window.changeMonth = function(delta) {
+      currentCalMonth += delta;
       if (currentCalMonth < 0) {
         currentCalMonth = 11;
-        currentCalYear--;
-      }
-      renderCalendar();
-    };
-
-    window.nextMonth = function() {
-      currentCalMonth++;
-      if (currentCalMonth > 11) {
+        currentCalYear -= 1;
+      } else if (currentCalMonth > 11) {
         currentCalMonth = 0;
-        currentCalYear++;
+        currentCalYear += 1;
       }
       renderCalendar();
     };
 
-    window.todayMonth = function() {
+    window.jumpToToday = function() {
       const now = new Date();
       currentCalYear = now.getFullYear();
       currentCalMonth = now.getMonth();
       renderCalendar();
     };
 
+    window.showTaskDetail = function(groupTitle, taskText, date, dateType) {
+      const typeStr = dateType === 'event' ? '🗓️ 參加日' : '⏳ 截止日';
+      alert(`【${groupTitle}】\n任務: ${taskText}\n類型: ${typeStr}\n日期: ${date}`);
+    };
+
     function render() {
+      renderTodoList();
+      renderCalendar();
+    }
+
+    function renderTodoList() {
       const container = document.getElementById('todo-container');
       container.innerHTML = '';
 
@@ -377,7 +407,7 @@
             </div>
           </div>
           <div style="margin-bottom: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="sub-input-${gIndex}" placeholder="Type" style="width: 150px;">
+            <input type="text" id="sub-input-${gIndex}" placeholder="Type" style="width: 160px;">
             <input type="date" id="sub-date-${gIndex}">
             <select id="sub-type-${gIndex}">
               <option value="none">No Date</option>
@@ -425,95 +455,80 @@
       });
     }
 
-    // ====== 月曆動態渲染核心邏輯 ======
     function renderCalendar() {
-      const calTitle = document.getElementById('calendar-title');
-      const calDaysGrid = document.getElementById('calendar-days');
+      const titleEl = document.getElementById('cal-title');
+      const gridEl = document.getElementById('cal-grid');
       
-      const year = currentCalYear;
-      const month = currentCalMonth;
+      const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+      titleEl.innerText = `${currentCalYear}年 ${monthNames[currentCalMonth]}`;
 
-      // 更新標題：例如 2026 年 9 月
-      calTitle.innerText = `${year} 年 ${month + 1} 月`;
-
-      // 整理出當月所有含有日期的任務 map: { '2026-09-14': [ {...}, {...} ] }
-      const eventsMap = {};
+      const dateTaskMap = {};
       todoData.forEach(group => {
         group.subs.forEach(sub => {
           if (sub.date) {
-            if (!eventsMap[sub.date]) {
-              eventsMap[sub.date] = [];
-            }
-            eventsMap[sub.date].push({
+            if (!dateTaskMap[sub.date]) dateTaskMap[sub.date] = [];
+            dateTaskMap[sub.date].push({
               groupTitle: group.title,
               text: sub.text,
-              type: sub.dateType
+              dateType: sub.dateType,
+              date: sub.date
             });
           }
         });
       });
 
-      calDaysGrid.innerHTML = '';
+      gridEl.innerHTML = `
+        <div class="cal-header-cell">日</div>
+        <div class="cal-header-cell">一</div>
+        <div class="cal-header-cell">二</div>
+        <div class="cal-header-cell">三</div>
+        <div class="cal-header-cell">四</div>
+        <div class="cal-header-cell">五</div>
+        <div class="cal-header-cell">六</div>
+      `;
 
-      // 計算本月第一天是星期幾，以及本月共有幾天
-      const firstDayIndex = new Date(year, month, 1).getDay(); // 0(日) ~ 6(六)
-      const lastDate = new Date(year, month + 1, 0).getDate();
+      const firstDayIndex = new Date(currentCalYear, currentCalMonth, 1).getDay();
+      const totalDays = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
 
-      // 計算上個月最後幾天（補齊首週空缺）
-      const prevMonthLastDate = new Date(year, month, 0).getDate();
-
-      // 今天字串 YYYY-MM-DD
       const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      // 1. 填入上個月的尾巴
-      for (let i = firstDayIndex; i > 0; i--) {
-        const d = prevMonthLastDate - i + 1;
-        const cell = document.createElement('div');
-        cell.className = 'calendar-cell other-month';
-        cell.innerHTML = `<span class="day-number">${d}</span>`;
-        calDaysGrid.appendChild(cell);
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'cal-cell empty';
+        gridEl.appendChild(emptyCell);
       }
 
-      // 2. 填入當月每一天
-      for (let d = 1; d <= lastDate; d++) {
+      for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${currentCalYear}-${String(currentCalMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = (dateStr === todayStr);
+
         const cell = document.createElement('div');
-        cell.className = 'calendar-cell';
+        cell.className = `cal-cell ${isToday ? 'today' : ''}`;
 
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        if (dateStr === todayStr) {
-          cell.classList.add('today');
-        }
+        const dateNum = document.createElement('div');
+        dateNum.className = 'cal-date-num';
+        dateNum.innerText = day;
+        cell.appendChild(dateNum);
 
-        let itemsHtml = '';
-        if (eventsMap[dateStr]) {
-          eventsMap[dateStr].forEach(ev => {
-            const isEvent = ev.type === 'event';
-            const icon = isEvent ? '🗓️' : '⏳';
-            const cls = isEvent ? 'cal-event-date' : 'cal-event-deadline';
-            itemsHtml += `
-              <div class="cal-event ${cls}" title="[${escapeHtml(ev.groupTitle)}] ${escapeHtml(ev.text)}">
-                ${icon} <b>[${escapeHtml(ev.groupTitle)}]</b> ${escapeHtml(ev.text)}
-              </div>
+        if (dateTaskMap[dateStr]) {
+          dateTaskMap[dateStr].forEach(item => {
+            const taskPill = document.createElement('div');
+            const isEvent = (item.dateType === 'event');
+            taskPill.className = `cal-task-pill ${isEvent ? 'cal-task-event' : 'cal-task-deadline'}`;
+            taskPill.title = `[${item.groupTitle}] ${item.text}\n(點擊查看完整內容)`;
+            
+            // 雙層工整排版：上層大項目標籤、下層任務主體（省略號防破版）
+            taskPill.innerHTML = `
+              <span class="cal-pill-tag">${escapeHtml(item.groupTitle)}</span>
+              <span class="cal-pill-text">${isEvent ? '🗓️' : '⏳'} ${escapeHtml(item.text)}</span>
             `;
+            taskPill.onclick = () => showTaskDetail(item.groupTitle, item.text, item.date, item.dateType);
+            cell.appendChild(taskPill);
           });
         }
 
-        cell.innerHTML = `
-          <span class="day-number">${d}</span>
-          <div style="overflow-y: auto; max-height: 80px;">${itemsHtml}</div>
-        `;
-        calDaysGrid.appendChild(cell);
-      }
-
-      // 3. 填入下個月的開頭（補齊總格數為 7 的倍數）
-      const totalCells = firstDayIndex + lastDate;
-      const nextDays = (7 - (totalCells % 7)) % 7;
-      for (let j = 1; j <= nextDays; j++) {
-        const cell = document.createElement('div');
-        cell.className = 'calendar-cell other-month';
-        cell.innerHTML = `<span class="day-number">${j}</span>`;
-        calDaysGrid.appendChild(cell);
+        gridEl.appendChild(cell);
       }
     }
 
@@ -584,45 +599,28 @@
   <h2>To-Do List & Calendar</h2>
   <div class="status-bar" id="sync-status">🔄 正在連線雲端資料庫...</div>
 
-  <!-- 主佈局：左右雙欄 -->
   <div class="main-layout">
-    
-    <!-- 左欄：To-Do List 區域 -->
-    <div class="todo-section">
-      <div style="margin-bottom: 20px;">
-        <input type="text" id="new-group-input" placeholder="Type" style="width: 250px;">
+    <div class="left-panel">
+      <div style="margin-bottom: 15px;">
+        <input type="text" id="new-group-input" placeholder="Type" style="width: 220px;">
         <button onclick="addGroup()">Add</button>
       </div>
-
       <div id="todo-container"></div>
     </div>
 
-    <!-- 右欄：行事曆區域 -->
-    <div class="calendar-section">
-      <div class="calendar-header">
-        <h3 id="calendar-title">2026 年</h3>
-        <div>
-          <button onclick="prevMonth()">◀ 上個月</button>
-          <button onclick="todayMonth()">今天</button>
-          <button onclick="nextMonth()">下個月 ▶</button>
+    <div class="right-panel">
+      <div class="calendar-container">
+        <div class="calendar-nav">
+          <button onclick="changeMonth(-1)">◀ 上個月</button>
+          <h3 id="cal-title"></h3>
+          <div>
+            <button onclick="jumpToToday()">今天</button>
+            <button onclick="changeMonth(1)">下個月 ▶</button>
+          </div>
         </div>
+        <div class="calendar-grid" id="cal-grid"></div>
       </div>
-
-      <!-- 星期列 -->
-      <div class="calendar-grid">
-        <div class="calendar-day-head" style="color: #c5221f;">日</div>
-        <div class="calendar-day-head">一</div>
-        <div class="calendar-day-head">二</div>
-        <div class="calendar-day-head">三</div>
-        <div class="calendar-day-head">四</div>
-        <div class="calendar-day-head">五</div>
-        <div class="calendar-day-head" style="color: #1a73e8;">六</div>
-      </div>
-
-      <!-- 日期格子 -->
-      <div class="calendar-grid" id="calendar-days"></div>
     </div>
-
   </div>
 
 </body>
